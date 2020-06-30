@@ -3,7 +3,6 @@ package web
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"syscall"
@@ -68,7 +67,8 @@ func (a *App) Handle(method string, path string, handler Handler, mw ...Middlewa
 		ctx := context.WithValue(r.Context(), KeyValues, &v)
 
 		if err := handler(ctx, w, r); err != nil {
-			fmt.Println(err)
+			a.SignalShutdown()
+			return
 		}
 
 		// BOILERPLATE CODE

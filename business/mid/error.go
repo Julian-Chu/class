@@ -4,13 +4,13 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/ardanlabs/service/foundation/web"
 )
 
-// Logger ...
-func Logger(log *log.Logger) web.Middleware {
+// Error ...
+func Error(log *log.Logger) web.Middleware {
+
 	m := func(before web.Handler) web.Handler {
 
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -20,15 +20,22 @@ func Logger(log *log.Logger) web.Middleware {
 				return web.NewShutdownError("web value missing from context")
 			}
 
-			err := before(ctx, w, r)
+			if err := before(ctx, w, r); err != nil {
 
-			log.Printf("%s : (%d) : %s %s -> %s (%s)",
-				v.TraceID, v.StatusCode,
-				r.Method, r.URL.Path,
-				r.RemoteAddr, time.Since(v.Now),
-			)
+				log.Printf("%s : ERROR : %v", v.TraceID, err)
 
-			return err
+				if err := web.RespondError(ctx, w, err); err != nil {
+					return err
+				}
+
+				if ok := web.IsShutdown(err); ok {
+					// Validate if this is really something
+					// we want to do.
+					return err
+				}
+			}
+
+			return nil
 		}
 
 		return h
