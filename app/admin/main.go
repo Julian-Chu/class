@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ardanlabs/service/business/auth"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 )
@@ -30,25 +31,27 @@ func main() {
 func gentoken() error {
 	privatePEM, err := ioutil.ReadFile("private.pem")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "reading auth private key")
 	}
 
 	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privatePEM)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "parsing auth private key")
 	}
 
-	// iss (issuer): Issuer of the JWT
-	// sub (subject): Subject of the JWT (the user)
-	// aud (audience): Recipient for which the JWT is intended
-	// exp (expiration time): Time after which the JWT expires
-	// nbf (not before time): Time before which the JWT must not be accepted for processing
-	// iat (issued at time): Time at which the JWT was issued; can be used to determine age of the JWT
-	// jti (JWT ID): Unique identifier; can be used to prevent the JWT from being replayed (allows a token to be used only once)
-	claims := struct {
-		jwt.StandardClaims
-		Roles []string
-	}{
+	keyLookupFunc := func(kid string) (*rsa.PublicKey, error) {
+		switch kid {
+		case "1":
+			return privateKey.Public().(*rsa.PublicKey), nil
+		}
+		return nil, fmt.Errorf("no public key found for the specified kid: %s", kid)
+	}
+	a, err := auth.New(privateKey, "1", "RS256", keyLookupFunc)
+	if err != nil {
+		return errors.Wrap(err, "constructing auth")
+	}
+
+	claims := auth.Claims{
 		StandardClaims: jwt.StandardClaims{
 			Issuer:    "service project",
 			Subject:   "12345",
@@ -58,10 +61,7 @@ func gentoken() error {
 		Roles: []string{"ADMIN"},
 	}
 
-	method := jwt.GetSigningMethod("RS256")
-
-	tkn := jwt.NewWithClaims(method, claims)
-	str, err := tkn.SignedString(privateKey)
+	str, err := a.GenerateToken(claims)
 	if err != nil {
 		return err
 	}
