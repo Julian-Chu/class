@@ -31,6 +31,6 @@ kind-status-full:
 kind-logs:
 	kubectl logs -lapp=sales-api --all-containers=true -f
 
-kind-reload: build
+kind-update: build
 	kind load docker-image class-sales-api-amd64:1.0 --name class-cluster
 	kubectl delete pods -lapp=sales-api
