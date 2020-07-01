@@ -16,7 +16,7 @@ import (
 func API(build string, shutdown chan os.Signal, log *log.Logger, a *auth.Auth) *web.App {
 	app := web.NewApp(shutdown, mid.Logger(log), mid.Error(log), mid.Metrics(), mid.Panic(log))
 
-	app.Handle(http.MethodGet, "/health", health, mid.Authenticate(a), mid.HasRole(auth.RoleAdmin))
+	app.Handle(http.MethodGet, "/health", health)
 
 	return app
 }
