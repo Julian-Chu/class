@@ -4,14 +4,33 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/ardanlabs/service/foundation/database"
 	"github.com/ardanlabs/service/foundation/web"
+	"github.com/jmoiron/sqlx"
 )
 
-func health(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	status := struct {
-		Status string
-	}{
-		Status: "OK",
+type check struct {
+	build string
+	db    *sqlx.DB
+}
+
+// If the database is not ready we will tell the client and use a 500
+// status. Do not respond by just returning an error because further up in
+// the call stack will interpret that as a non-trusted error.
+func (c *check) health(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	status := "ok"
+	statusCode := http.StatusOK
+	if err := database.StatusCheck(ctx, c.db); err != nil {
+		status = "db not ready"
+		statusCode = http.StatusInternalServerError
 	}
-	return web.Respond(ctx, w, status, http.StatusOK)
+
+	health := struct {
+		Version string `json:"version"`
+		Status  string `json:"status"`
+	}{
+		Version: c.build,
+		Status:  status,
+	}
+	return web.Respond(ctx, w, health, statusCode)
 }

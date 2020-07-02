@@ -9,9 +9,11 @@ require (
 	github.com/dimiro1/darwin v0.0.0-20191008194338-370f81775d3b
 	github.com/go-playground/locales v0.13.0
 	github.com/go-playground/universal-translator v0.17.0
+	github.com/google/go-cmp v0.3.1
 	github.com/google/uuid v1.1.1
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/leodido/go-urn v1.2.0 // indirect
+	github.com/lib/pq v1.0.0
 	github.com/pkg/errors v0.9.1
 	google.golang.org/appengine v1.6.6 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
