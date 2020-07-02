@@ -17,11 +17,20 @@ import (
 func API(build string, shutdown chan os.Signal, log *log.Logger, a *auth.Auth, db *sqlx.DB) *web.App {
 	app := web.NewApp(shutdown, mid.Logger(log), mid.Error(log), mid.Metrics(), mid.Panic(log))
 
-	check := check{
+	c := check{
 		build: build,
 		db:    db,
 	}
-	app.Handle(http.MethodGet, "/health", check.health)
+	app.Handle(http.MethodGet, "/health", c.health)
+
+	p := productHandlers{
+		db: db,
+	}
+	app.Handle(http.MethodGet, "/products", p.list, mid.Authenticate(a))
+	app.Handle(http.MethodGet, "/products/:id", p.retrieve, mid.Authenticate(a))
+	app.Handle(http.MethodPost, "/products", p.create, mid.Authenticate(a))
+	app.Handle(http.MethodPut, "/products/:id", p.update, mid.Authenticate(a))
+	app.Handle(http.MethodDelete, "/products/:id", p.delete, mid.Authenticate(a))
 
 	return app
 }

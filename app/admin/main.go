@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/ardanlabs/service/business/auth"
+	"github.com/ardanlabs/service/business/data/schema"
+	"github.com/ardanlabs/service/foundation/database"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 )
@@ -22,10 +24,43 @@ func main() {
 	// 	os.Exit(1)
 	// }
 
-	if err := gentoken(); err != nil {
+	// if err := gentoken(); err != nil {
+	// 	log.Println(err)
+	// 	os.Exit(1)
+	// }
+
+	if err := seed(); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
+}
+
+func seed() error {
+	cfg := database.Config{
+		User:       "postgres",
+		Password:   "postgres",
+		Host:       "0.0.0.0",
+		Name:       "postgres",
+		DisableTLS: true,
+	}
+
+	db, err := database.Open(cfg)
+	if err != nil {
+		return errors.Wrap(err, "connect database")
+	}
+	defer db.Close()
+
+	if err := schema.Migrate(db); err != nil {
+		return errors.Wrap(err, "migrate database")
+	}
+	fmt.Println("migrations complete")
+
+	if err := schema.Seed(db); err != nil {
+		return errors.Wrap(err, "seed database")
+	}
+
+	fmt.Println("seed data complete")
+	return nil
 }
 
 func gentoken() error {
