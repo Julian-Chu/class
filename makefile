@@ -15,6 +15,9 @@ admin:
 kind-up:
 	kind create cluster --name class-cluster --config zarf/k8s/dev/kind-config.yaml
 
+kind-down:
+	kind delete cluster --name class-cluster
+
 kind-load:
 	kind load docker-image class-sales-api-amd64:1.0 --name class-cluster
 
